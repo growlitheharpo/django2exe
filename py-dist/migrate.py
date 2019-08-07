@@ -12,7 +12,7 @@ class Database:
         try:
             subprocess.call(['python','..\\' + self.project_dir_name + '\manage.pyc','makemigrations'], shell=True)
             subprocess.call(['python','..\\' + self.project_dir_name + '\manage.pyc','migrate',], shell=True)
-        except Exception, e:
+        except Exception as e:
             print (e)
 
     def processconfiguration(self):

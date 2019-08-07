@@ -6,10 +6,11 @@ import json
 import compileall
 from distutils import util
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 proc = None
 class Info:
@@ -141,7 +142,7 @@ def ExceptHook(excType, excValue, traceObject):
     cefpython.Shutdown()
     os._exit(1)
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QMainWindow):
     mainFrame = None
 
     def __init__(self):
@@ -172,7 +173,7 @@ class MainWindow(QtGui.QMainWindow):
         subprocess.call(['taskkill', '/F', '/T', '/PID', str(proc.pid)])
         self.mainFrame.browser.CloseBrowser()
 
-class MainFrame(QtGui.QWidget):
+class MainFrame(QWidget):
     browser = None
 
     def __init__(self, parent=None):
@@ -198,7 +199,7 @@ class MainFrame(QtGui.QWidget):
     def resizeEvent(self, event):
         cefpython.WindowUtils.OnSize(int(self.winId()), 0, 0, 0)
 
-class CefApplication(QtGui.QApplication):
+class CefApplication(QApplication):
     timer = None
 
     def __init__(self, args):
