@@ -1,7 +1,9 @@
 .vs/
 .vscode/
+
 *.pyc
 *.whl
 
+*.log
 out.txt
 
