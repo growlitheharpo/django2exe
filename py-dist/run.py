@@ -152,6 +152,9 @@ class MainWindow(QMainWindow):
         filemenu.addAction(QtGui.QAction("Exit", self))
         aboutmenu = menubar.addMenu("&About")
 
+    def forceResize(self):
+        self.mainFrame.resizeEvent(None)
+
     def focusInEvent(self, event):
         cefpython.WindowUtils.OnSetFocus(int(self.centralWidget().winId()), 0, 0, 0)
 
@@ -279,6 +282,7 @@ if __name__ == '__main__':
     mainWindow = MainWindow()
     splash.close()
     mainWindow.show()
+    mainWindow.forceResize()
     app.exec_()
     app.stopTimer()
 
