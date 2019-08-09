@@ -169,13 +169,16 @@ class MainFrame(QWidget):
         super(MainFrame, self).__init__(parent)
         windowInfo = cefpython.WindowInfo()
         windowInfo.SetAsChild(int(self.winId()))    
+        attempt_count = 0
         while True:
+            attempt_count += 1
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             result = sock.connect_ex(('127.0.0.1', info.target_port))
             sock.close()
             if result == 0:
                 break
 
+        print("MainFrame connection loop took " + str(attempt_count) + " attempts")
 
         self.browser = cefpython.CreateBrowserSync(
             windowInfo,
