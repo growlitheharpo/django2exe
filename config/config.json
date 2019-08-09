@@ -5,10 +5,10 @@
         "initial_height": 720,
         "min_width": 800,
         "min_height": 600,
-        "fullscreen_allowed": "true",
+        "fullscreen_allowed": true,
         "max_width": 800,
         "max_height": 600,
-        "dev_tools_menu_enabled": "true"
+        "dev_tools_menu_enabled": true
     },
     "application" : {
         "project_dir_name" : "app",

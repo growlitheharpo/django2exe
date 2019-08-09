@@ -54,7 +54,6 @@ class Info:
                 # Do some fixup for some of the settings
                 self.icon_name = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'config', data.icon))
                 self.project_dir_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', self.project_dir_name))
-                self.dev_tools_menu_enabled = bool(self.dev_tools_menu_enabled)
         except Exception as e:
             print (e)
             print ("Failed Reading Config")
