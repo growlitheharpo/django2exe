@@ -13,52 +13,46 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 proc = None
+
 class Info:
-    def __init__(self):
-        self.initial_width = 800
-        self.initial_height = 600
-        self.max_width = 0
-        self.max_height = 0
-        self.min_width = 800
-        self.min_height = 600
-        self.window_title = "Ideal POS"
-        self.icon_name = "icon.png"
-        self.fullscreen_allowed = True
-        self.project_dir_name="app"
-        self.project_dir_path="../app/"
-        self.dev_tools_menu_enabled = True
-        self.__file__ = '__file__'
-        self.libcef_dll = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                'libcef.dll')
-        self.splashscreen_img = "splashscreen.png"
+    initial_width = 800
+    initial_height = 600
+    max_width = 0
+    max_height = 0
 
+    window_title = "Test App"
+    icon_name = "icon.png"
+    splashscreen_img = "splashscreen.png"
+    fullscreen_allowed = True
 
-    def processconfiguration(self):
-        config_file_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'config','config.json'))
+    project_dir_name = "app"
+    project_dir_path = "../app/"
+    dev_tools_menu_enabled = True
+
+    def copy_properties(self, target_object):
+        import inspect
+        for name,value in inspect.getmembers(target_object):
+            if (name.startswith('__') and name.endswith('__')):
+                continue
+            setattr(self, name, value)
+
+    def process_configuration(self):
+        config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json'))
         try:
-            with open(config_file_path) as data_file:    
-                data = json.load(data_file)
-                self.splashscreen_img = data["splashscreen_img"]
-                django_app_data = data["application"]
-                self.project_dir_name = django_app_data["project_dir_name"]
-                self.project_dir_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..',self.project_dir_name))
-                window_data= data["window"]
-                self.dev_tools_menu_enabled = bool(util.strtobool(window_data["dev_tools_menu_enabled"].lower()))
-                self.initial_width = int(window_data["width"])
-                self.initial_height = int(window_data["height"])
-                self.min_width = int(window_data["min_width"])
-                self.min_height = int(window_data["min_height"])
-                self.window_title = window_data["title"]
-                icon_name = window_data["icon"]
-                self.icon_name = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'config',icon_name))
-                self.fullscreen_allowed =  bool(util.strtobool(window_data["fullscreen_allowed"].lower()))
-                self.max_width = int(window_data["max_width"])
-                self.max_height = int(window_data["max_height"])
-                database_data= data["database"]
-                self.dbhost = database_data["dbhost"]
-                self.dbname = database_data["dbname"]
-                self.dbuser = database_data["dbuser"]
-                self.dbpassword = database_data["dbpassword"]
+            with open(config_file_path) as data_file:
+                from types import SimpleNamespace as Namespace
+                data = json.load(data_file, object_hook=lambda d: Namespace(**d))
+
+                self.splashscreen_img = data.splashscreen_img
+
+                self.copy_properties(data.application)
+                self.copy_properties(data.window)
+                self.copy_properties(data.database)
+
+                # Do some fixup for some of the settings
+                self.icon_name = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'config', data.icon))
+                self.project_dir_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', self.project_dir_name))
+                self.dev_tools_menu_enabled = bool(self.dev_tools_menu_enabled)
         except Exception as e:
             print (e)
             print ("Failed Reading Config")
@@ -70,7 +64,6 @@ class Info:
             db.makeMigrationsAndmigrate()
             os.remove('migrate.py')
 
-info = Info()
 if os.path.exists(info.libcef_dll):
     # Import a local module
     if (2,7) <= sys.version_info < (2,8):
@@ -147,13 +140,16 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__(None)
+
         info = Info()
-        info.processconfiguration()
+        info.process_configuration()
         self.mainFrame = MainFrame(self)
         self.setCentralWidget(self.mainFrame)
         self.setMinimumSize(info.min_width,info.min_height)
+
         if info.fullscreen_allowed == False and info.max_height != 0 and info.max_width != 0: 
             self.setMaximumSize(info.max_width,info.max_height)
+
         self.resize(info.initial_width, info.initial_height)
         self.setWindowTitle(info.window_title)
         self.setWindowIcon(QtGui.QIcon(info.icon_name))
@@ -224,12 +220,11 @@ class CefApplication(QApplication):
         # should not happen anymore.
         self.timer.stop()
 
+info = Info()
 
 if __name__ == '__main__':
-
     appscreen = QApplication(sys.argv)
-    info = Info()
-    info.processconfiguration()
+    info.process_configuration()
 
     # Create and display the splash screen
     splash_pix = QPixmap(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'img', info.splashscreen_img)))
