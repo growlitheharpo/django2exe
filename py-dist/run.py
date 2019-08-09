@@ -168,16 +168,17 @@ class MainFrame(QWidget):
         windowInfo.SetAsChild(int(self.winId()))    
         while True:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            result = sock.connect_ex(('127.0.0.1',8000))
+            result = sock.connect_ex(('127.0.0.1', info.target_port))
             sock.close()
             if result == 0:
                 break
-        self.browser = cefpython.CreateBrowserSync(windowInfo,
-                browserSettings={},
-                navigateUrl=GetApplicationPath("http://127.0.0.1:8000"))
+
+
+        self.browser = cefpython.CreateBrowserSync(
+            windowInfo,
+            browserSettings={},
+            navigateUrl=GetApplicationPath("http://127.0.0.1:" + str(info.target_port)))
         self.show()
-
-
 
     def moveEvent(self, event):
         cefpython.WindowUtils.OnSize(int(self.winId()), 0, 0, 0)
@@ -239,7 +240,7 @@ if __name__ == '__main__':
             appscreen.processEvents()
             info.check_if_migration_performed()
 
-    proc = subprocess.Popen(['python','..\\' + info.project_dir_name + '\manage.pyc','runserver','127.0.0.1:8000'])
+    proc = subprocess.Popen(['python','.\\' + info.project_dir_name + '\manage.py', 'runserver', '127.0.0.1:' + str(info.target_port)])
     print("[pyqt.py] PyQt version: %s" % QtCore.PYQT_VERSION_STR)
     print("[pyqt.py] QtCore version: %s" % QtCore.qVersion())
 
