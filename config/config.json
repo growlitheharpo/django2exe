@@ -14,7 +14,9 @@
         "project_dir_name" : "app",
         "version" : "1.0",
         "target_port": 8000,
-        "description": "Demo app of django2exe"
+        "description": "Demo app of django2exe",
+        "display_splashscreen": false,
+        "attempt_migration": false
     },
     "database":{
         "dbhost":"127.0.0.1",

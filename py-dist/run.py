@@ -223,28 +223,31 @@ if __name__ == '__main__':
     appscreen = QApplication(sys.argv)
     info.process_configuration()
 
-    # Create and display the splash screen
-    splash_pix = QPixmap(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'img', info.splashscreen_img)))
+    if info.display_splashscreen:
+        # Create and display the splash screen
+        splash_pix = QPixmap(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'img', info.splashscreen_img)))
 
-    splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
-    splash.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
-    splash.setEnabled(False)
+        splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+        splash.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
+        splash.setEnabled(False)
 
-    # adding progress bar
-    progressBar = QProgressBar(splash)
-    progressBar.setMaximum(10)
-    progressBar.setGeometry(0, splash_pix.height() - 50, splash_pix.width(), 20)
-    progressBar.setStyleSheet ("QProgressBar {border: 2px solid beige;border-radius: 5px;margin-left: 14ex;margin-right: 14ex;text-align: center;} QProgressBar::chunk {background-color: #0A2F3D;width: 20px;margin: 0.5px;}")
+        # adding progress bar
+        progressBar = QProgressBar(splash)
+        progressBar.setMaximum(10)
+        progressBar.setGeometry(0, splash_pix.height() - 50, splash_pix.width(), 20)
+        progressBar.setStyleSheet ("QProgressBar {border: 2px solid beige;border-radius: 5px;margin-left: 14ex;margin-right: 14ex;text-align: center;} QProgressBar::chunk {background-color: #0A2F3D;width: 20px;margin: 0.5px;}")
 
-    splash.show()
-    splash.showMessage("<h1><font color='white'>Configuring the server, Please wait ....</font></h1>", Qt.AlignTop | Qt.AlignCenter, Qt.black)
-    
-    for i in range(1, 11):
-        progressBar.setValue(i)
-        t = time.time()
-        while time.time() < t + 0.1:
-            appscreen.processEvents()
-            info.check_if_migration_performed()
+        splash.show()
+        splash.showMessage("<h1><font color='white'>Configuring the server, Please wait ....</font></h1>", Qt.AlignTop | Qt.AlignCenter, Qt.black)
+
+    if info.attempt_migration:
+        for i in range(1, 11):
+            if info.display_splashscreen:
+                progressBar.setValue(i)
+            t = time.time()
+            while time.time() < t + 0.1:
+                appscreen.processEvents()
+                info.check_if_migration_performed()
 
     proc = subprocess.Popen(['python','.\\' + info.project_dir_name + '\manage.py', 'runserver', '127.0.0.1:' + str(info.target_port)])
     print("[pyqt.py] PyQt version: %s" % QtCore.PYQT_VERSION_STR)
@@ -279,13 +282,15 @@ if __name__ == '__main__':
     }
 
     cefpython.Initialize(settings, switches)
-
     app = CefApplication(sys.argv)
-
     mainWindow = MainWindow()
-    splash.close()
+
+    if info.display_splashscreen:
+        splash.close()
+
     mainWindow.show()
     mainWindow.forceResize()
+
     app.exec_()
     app.stopTimer()
 
