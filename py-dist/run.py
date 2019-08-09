@@ -12,6 +12,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+from cefpython3 import cefpython
+
 proc = None
 
 class Info:
@@ -63,18 +65,6 @@ class Info:
             db = Database()
             db.makeMigrationsAndmigrate()
             os.remove('migrate.py')
-
-if os.path.exists(info.libcef_dll):
-    # Import a local module
-    if (2,7) <= sys.version_info < (2,8):
-        import cefpython_py27 as cefpython
-    elif (3,4) <= sys.version_info < (3,4):
-        import cefpython_py34 as cefpython
-    else:
-        raise Exception("Unsupported python version: %s" % sys.version)
-else:
-    # Import an installed package
-    from cefpython3 import cefpython
 
 def GetApplicationPath(file=None):
     # import re, os, platform
