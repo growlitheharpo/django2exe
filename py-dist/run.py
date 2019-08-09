@@ -172,10 +172,14 @@ class MainFrame(QWidget):
         while True:
             attempt_count += 1
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.01)
             result = sock.connect_ex(('127.0.0.1', info.target_port))
             sock.close()
             if result == 0:
                 break
+            if attempt_count >= info.connect_attempt_limit:
+                raise Exception('Failure while attempting to connect to Django server: attempts exceeded limit ({})'.format(attempt_count))
+            time.sleep(0.01)
 
         print("MainFrame connection loop took " + str(attempt_count) + " attempts")
 
@@ -248,7 +252,14 @@ if __name__ == '__main__':
                 appscreen.processEvents()
                 info.check_if_migration_performed()
 
-    proc = subprocess.Popen(['python','.\\' + info.project_dir_name + '\manage.py', 'runserver', '127.0.0.1:' + str(info.target_port)])
+    # This isn't ideal, but it catches running from debugger vs launchapp.bat
+    base_path = '.\\'
+    cwd = os.getcwd()
+    file_path = os.path.dirname(os.path.abspath(__file__))
+    if (cwd == file_path):
+        base_path = '..\\'
+
+    proc = subprocess.Popen(['python', base_path + info.project_dir_name + '\manage.py', 'runserver', '127.0.0.1:' + str(info.target_port)])
     print("[pyqt.py] PyQt version: %s" % QtCore.PYQT_VERSION_STR)
     print("[pyqt.py] QtCore version: %s" % QtCore.qVersion())
 
@@ -298,4 +309,6 @@ if __name__ == '__main__':
     del mainWindow
     del app
     cefpython.Shutdown()
+
+    proc.kill()
     os._exit(1)
