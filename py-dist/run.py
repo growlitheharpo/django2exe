@@ -1,7 +1,7 @@
 # An example of embedding CEF browser in a PyQt4 application.
 # Tested with PyQt 4.10.3 (Qt 4.8.5).
 import re, os, sys, platform, traceback, time, codecs 
-import subprocess,time,socket
+import subprocess,time,socket,threading
 import json
 import compileall
 from distutils import util
@@ -13,8 +13,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from cefpython3 import cefpython
-
-proc = None
 
 class Info:
     initial_width = 800
@@ -50,6 +48,7 @@ class Info:
                 self.copy_properties(data.application)
                 self.copy_properties(data.window)
                 self.copy_properties(data.database)
+                self.debug_settings = data.debug
 
                 # Do some fixup for some of the settings
                 self.icon_name = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'config', data.icon))
@@ -124,6 +123,9 @@ def ExceptHook(excType, excValue, traceObject):
     cefpython.Shutdown()
     os._exit(1)
 
+from djangoproc import DjangoProcess
+django_proc = DjangoProcess()
+
 class MainWindow(QMainWindow):
     mainFrame = None
 
@@ -158,7 +160,6 @@ class MainWindow(QMainWindow):
         cefpython.WindowUtils.OnSetFocus(int(self.centralWidget().winId()), 0, 0, 0)
 
     def closeEvent(self, event):
-        subprocess.call(['taskkill', '/F', '/T', '/PID', str(proc.pid)])
         self.mainFrame.browser.CloseBrowser()
 
 class MainFrame(QWidget):
@@ -197,6 +198,7 @@ class MainFrame(QWidget):
 
 class CefApplication(QApplication):
     timer = None
+    did_error = False
 
     def __init__(self, args):
         super(CefApplication, self).__init__(args)
@@ -213,6 +215,10 @@ class CefApplication(QApplication):
         # 2. In onTimer() call MessageLoopWork() only when
         #    QtGui.QApplication.instance()->hasPendingEvents() returns False.
         # But... there is a bug in Qt, hasPendingEvents() returns always true.
+        if django_proc.is_crashed:
+            self.did_error = True
+            self.quit()
+
         cefpython.MessageLoopWork()
 
     def stopTimer(self):
@@ -259,7 +265,9 @@ if __name__ == '__main__':
     if (cwd == file_path):
         base_path = '..\\'
 
-    proc = subprocess.Popen(['python', base_path + info.project_dir_name + '\manage.py', 'runserver', '127.0.0.1:' + str(info.target_port)])
+    django_path = os.path.join(cwd, base_path, info.project_dir_name)
+    django_proc.begin(django_path, str(info.target_port), info)
+
     print("[pyqt.py] PyQt version: %s" % QtCore.PYQT_VERSION_STR)
     print("[pyqt.py] QtCore version: %s" % QtCore.qVersion())
 
@@ -280,7 +288,7 @@ if __name__ == '__main__':
         "browser_subprocess_path": "%s/%s" % (
             cefpython.GetModuleDirectory(), "subprocess"),
         "context_menu":{
-            "enabled" : info.dev_tools_menu_enabled
+            "enabled" : info.debug_settings.dev_tools_menu_enabled
         },
     }
 
@@ -304,11 +312,22 @@ if __name__ == '__main__':
     app.exec_()
     app.stopTimer()
 
+    del mainWindow
+
+    if (app.did_error):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText("The process has crashed.")
+        msg.setInformativeText('[django] The server heartbeat stopped beating, indicating a fatal error.')
+        msg.setWindowTitle("Error")
+        msg.exec_()
+
     # Need to destroy QApplication(), otherwise Shutdown() fails.
     # Unset main window also just to be safe.
-    del mainWindow
     del app
     cefpython.Shutdown()
 
-    proc.kill()
+    if django_proc.is_alive():
+        django_proc.kill_now()
+
     os._exit(1)
